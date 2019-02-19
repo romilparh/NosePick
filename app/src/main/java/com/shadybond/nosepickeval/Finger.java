@@ -4,6 +4,8 @@ package com.shadybond.nosepickeval;
         import android.graphics.Bitmap;
         import android.graphics.BitmapFactory;
         import android.graphics.Rect;
+        import android.util.Log;
+
 public class Finger {
 
     final int fingerUp = 1;
@@ -32,7 +34,9 @@ public class Finger {
             // move right
             this.xPosition = this.xPosition + this.speed;
         }
-        else if(this.direction == 2){
+        else if(this.direction == 2 && this.yPosition>0){
+            Log.d("ROMIL", "FINGER IS MOVING UP: " + this.getXPosition() + "," + this.getYPosition());
+            this.yPosition = this.yPosition - this.speed;
         }
 
         // update the position of the hitbox

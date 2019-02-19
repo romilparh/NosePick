@@ -19,7 +19,7 @@ public class GameEngine extends SurfaceView implements Runnable {
     int screenWidth;
     int counter = 0;
 
-    final int fps = 10;
+    final int fps = 17;
     // game state
     boolean gameIsRunning;
 
@@ -44,6 +44,12 @@ public class GameEngine extends SurfaceView implements Runnable {
     Finger finger;
     Nose nose;
 
+    // check if player win
+    boolean win = false;
+
+
+
+    final int FINGER_VERTICAL_SPEED = 5;
 
     public GameEngine(Context context, int w, int h) {
         super(context);
@@ -81,7 +87,7 @@ public class GameEngine extends SurfaceView implements Runnable {
     public void run() {
         while (gameIsRunning == true) {
             counter = 0;
-            this.updateFingerPosition();
+            //this.updateFingerPosition();
             this.updatePositions();
             this.redrawSprites();
             this.setFPS();
@@ -89,10 +95,11 @@ public class GameEngine extends SurfaceView implements Runnable {
         }
     }
 
+    final int FINGER_STARTING_Y = 580; // (this.screenHeight)-500;
     private void spawnFinger() {
         // put player in middle of screen --> you may have to adjust the Y position
         // depending on your device / emulator
-        finger = new Finger(this.getContext(), 0, (this.screenHeight)-500);
+        finger = new Finger(this.getContext(), 0, FINGER_STARTING_Y);
         finger.setDirection(1);
 
     }
@@ -108,27 +115,20 @@ public class GameEngine extends SurfaceView implements Runnable {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         //@TODO: What should happen when person touches the screen? Update Finger Touch
-        finger.setYPosition(this.screenHeight-700);
 
+        //finger.setYPosition(finger.yPosition + FINGER_VERTICAL_SPEED);\
+        //finger.setYPosition(0);
 
-        updatePositions();
-        if(collided){
-            if(counter == 0){
-                picked++;
-                counter++;
-                collided = false;
-            }
-
+        // change the finger direction to up
+//        if (finger.getYPosition() >= FINGER_STARTING_Y) {
+//            finger.setYPosition(FINGER_STARTING_Y);
+//        }
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            Log.d("ROMIL", "CALLING THE TOUCH EVENT");
+            finger.setDirection(2);
         }
-        if(!collided){
-            if(counter == 0){
-                if(finger.getYPosition()!=0){
-                    missed++;
-                    counter++;
-                }
-            }
 
-        }
+
 
 
 
@@ -194,6 +194,22 @@ public class GameEngine extends SurfaceView implements Runnable {
             canvas.drawText("Hits: " + picked, 100, 100, paintbrush);
             canvas.drawText("Misses: " + missed, 100, 200, paintbrush);
 
+
+            if (win) {
+                // say YOU WIN
+                canvas.drawText("YOU WIN!!!", 100, 300, paintbrush);
+            }
+            else {
+                // erase previous win text
+                paintbrush.setColor(Color.WHITE);
+                canvas.drawText("YOU WIN!!!", 100, 300, paintbrush);
+
+                paintbrush.setColor(Color.BLACK);
+
+                canvas.drawText("YOU LOSE!!!", 100, 300, paintbrush);
+            }
+            // write if person wins or loses
+
             //----------------
             this.holder.unlockCanvasAndPost(canvas);
         }
@@ -208,44 +224,104 @@ public class GameEngine extends SurfaceView implements Runnable {
         }
     }
 
+
+
     public void updatePositions() {
         // @TODO: Update position of finger
 
-        finger.updatePlayerPosition();
-        System.out.println(finger.getXPosition());
-        if (finger.getXPosition() <= 0) {
 
-            //reset the enemy's starting position to right side of screen
-            // you may need to adjust this number according to your device/emulator
-            finger.setDirection(1);
-        } else if (finger.getXPosition() >= screenWidth) {
-            finger.setDirection(0);
-        } else if(finger.getDirection()== 2){
-            try {
-                gameThread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            finger.setXPosition(0);
-            finger.setDirection(0);
+
+
+
+
+        System.out.println(finger.getXPosition());
+//        if (finger.getXPosition() <= 0) {
+//
+//            //reset the enemy's starting position to right side of screen
+//            // you may need to adjust this number according to your device/emulator
+//            finger.setDirection(1);
+//        } else if (finger.getXPosition() >= screenWidth) {
+//            finger.setDirection(0);
+//        } else if(finger.getDirection()== 2){
+//            try {
+//                gameThread.sleep(1000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//            finger.setXPosition(0);
+//            finger.setDirection(0);
+//        }
+
+
+        Log.d("ROMIL", "Finger position: " + finger.getXPosition() + "," + finger.getYPosition() + ", Direction: " + finger.getDirection());
+
+
+
+        finger.updatePlayerPosition();
+
+        // collision detection
+        // -------------------
+        if (finger.getXPosition() <= 300) {
+            // if finger is at left side, change directions
+            finger.setDirection(1); // 1 = rigth
+        }
+        else if (finger.getXPosition() >= this.screenWidth -300) {
+            // if finger is at right side, change directions
+            finger.setDirection(0); // 0 = left
+
+        }
+        else if (finger.getYPosition() <= 0) {
+            // if finger is at top of screen, move it back down
+
+            Log.d("ROMIL", "++++++++++=FINGER IS ABOVE THE SCREEN");
+
+            this.missed++;
+            this.resetGame();
+
+
+//            // move finger back to original starting position
+//            finger.setYPosition(580);
+//            finger.setXPosition(0);
+//
+//            // start to move the finger left and right
+//            finger.setDirection(0);
+
         }
 
 
         if (finger.getHitbox().intersect(nose.getHitboxOne())) {
-            // reduce lives
-
-            // reset player to original position
+//            // reduce lives
+//
+//            // reset player to original position
             collided = true;
-            finger.setDirection(2);
+            this.picked++;
+
+            this.win = true;
+            this.resetGame();
+
         } else if (finger.getHitbox().intersect(nose.getHitboxTwo())) {
-            // reduce lives
+//            // reduce lives
 
             // reset player to original position
             collided = true;
-            finger.setDirection(2);
+            this.picked++;
+            this.win = true;
+            this.resetGame();
         }
 
     }
 
+    public void resetGame() {
+        // spawn finger back in starting position
+        try {
+            Thread.sleep(1000);
+            this.win = false;
+            this.spawnFinger();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
+    }
 
 }
